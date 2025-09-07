@@ -14,7 +14,6 @@
 #define SCREEN_HEIGHT 64
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-
 MAX30105 particleSensor;
 
 #define SENSOR_BUFFER_SIZE 32
@@ -33,7 +32,6 @@ int32_t bestSpO2 = 0;
 unsigned long lastSpO2UpdateTime = 0;
 
 // TensorFlow Lite variables
-
 tflite::MicroErrorReporter micro_error_reporter;
 tflite::ErrorReporter* error_reporter = &micro_error_reporter;
 const tflite::Model* model = nullptr;
@@ -47,28 +45,22 @@ const char* healthStatus[] = {"Normal", "Hyperoxia", "Hypoxia"};
 
 void setupTensorFlow() {
   model = tflite::GetModel(hrSpO2model_tflite); 
-
   static tflite::MicroMutableOpResolver<10> resolver;
   resolver.AddFullyConnected();
   resolver.AddSoftmax();
   resolver.AddQuantize();
   resolver.AddDequantize();
   static tflite::MicroInterpreter static_interpreter(
-
       model, resolver, tensor_arena, kTensorArenaSize, error_reporter);
-
   interpreter = &static_interpreter;
   interpreter->AllocateTensors();
   input = interpreter->input(0);
   output = interpreter->output(0);
-
 }
 
 int predictHealthStatus(float hr, float spo2) {
-
   if (interpreter == nullptr) {
     setupTensorFlow();
-
   }
 
   float hr_norm = (hr - 30.0) / 120.0;
@@ -85,7 +77,6 @@ int predictHealthStatus(float hr, float spo2) {
   if (output->data.f[1] > max_prob) {
     predicted_class = 1;
     max_prob = output->data.f[1];
-
   }
 
   if (output->data.f[2] > max_prob) {
@@ -128,7 +119,6 @@ void loop() {
   for (byte i = 0; i < SENSOR_BUFFER_SIZE; i++) {
     while (!particleSensor.available()) {
       particleSensor.check();
-
     }
 
     redBuffer[i] = particleSensor.getRed();
@@ -205,7 +195,6 @@ void loop() {
       int healthStatusIndex = predictHealthStatus(avgHR, spo2ToDisplay);
       display.setCursor(0, 55);
       display.print("Status: ");
-
       display.println(healthStatus[healthStatusIndex]);
     }
     display.display();
