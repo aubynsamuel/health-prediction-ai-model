@@ -28,7 +28,6 @@ int8_t validHeartRate;
 long hrSum = 0;
 int sampleCount = 0;
 unsigned long lastAvgTime = 0;
-
 int32_t bestSpO2 = 0;
 unsigned long lastSpO2UpdateTime = 0;
 
@@ -43,15 +42,11 @@ TfLiteTensor* output = nullptr;
 constexpr int kTensorArenaSize = 8 * 1024;
 uint8_t tensor_arena[kTensorArenaSize];
 
-// Health status arrays for each parameter
-// Assume model outputs: 0=Normal Oxygenation, 1=Mild Hypoxemia, 2=High Hypoxemia
-const char* spo2Status[] = {"Normal Oxygenation", "Mild Hypoxemia", "High Hypoxemia"};
-// Assume model outputs: 0=Normal Heart Rate, 1=Bradycardia, 2=Tachycardia
-const char* hrStatus[] = {"Normal Heart Rate", "Bradycardia", "Tachycardia"};
+const char* spo2Status[] = {"Normal", "Mild Hypoxemia", "High Hypoxemia"};
+const char* hrStatus[] = {"Normal", "Bradycardia", "Tachycardia"};
 
 void setupTensorFlow() {
   model = tflite::GetModel(hrSpO2model_tflite);
-  
   static tflite::MicroMutableOpResolver<10> resolver;
   resolver.AddFullyConnected();
   resolver.AddSoftmax();
@@ -67,8 +62,6 @@ void setupTensorFlow() {
   output = interpreter->output(0);
 }
 
-// Function to predict health status for both SpO2 and HR
-// This function now returns a struct or array to hold both results
 struct HealthStatusResult {
   int spo2Class;
   int hrClass;
@@ -86,28 +79,9 @@ HealthStatusResult predictHealthStatus(float hr, float spo2) {
 
   input->data.f[0] = hr_norm;
   input->data.f[1] = spo2_norm;
-
   interpreter->Invoke();
 
-  // Assuming the model output is two separate values
-  // The first output node corresponds to SpO2 class, the second to HR class.
-  // This is a simplified assumption. A more complex model might require
-  // a more elaborate post-processing of the output tensor.
   HealthStatusResult result;
-
-  // SpO2 Classification
-  // The existing model output logic needs to be adapted for two separate outputs.
-  // For this example, let's assume the model outputs a single integer for each parameter.
-  // E.g., output->data.i32[0] = spo2_class, output->data.i32[1] = hr_class
-  // However, the original code used a softmax on a single output, so this is a significant change.
-  // I will assume the model outputs a single tensor with two values, where the first is for SpO2 and the second for HR.
-  // The simplest interpretation is that the first output is a classification index for SpO2 and the second for HR.
-  
-  // To keep the code consistent with the original logic (finding the max probability),
-  // I will assume the model's output tensor has a structure like:
-  // [SpO2_Class_0_Prob, SpO2_Class_1_Prob, SpO2_Class_2_Prob, HR_Class_0_Prob, HR_Class_1_Prob, HR_Class_2_Prob]
-  // This is a common setup for multi-label classification.
-  // Let's modify the output parsing accordingly.
   
   // SpO2 classification based on first 3 output nodes
   float max_spo2_prob = -1.0;
@@ -241,7 +215,6 @@ void loop() {
       display.println("--- %");
     }
 
-    // AI Health Status Prediction
     if (avgHR > 0 && spo2ToDisplay > 0) {
       HealthStatusResult status = predictHealthStatus(avgHR, spo2ToDisplay);
 
@@ -253,7 +226,6 @@ void loop() {
       display.print("SpO2 Status: ");
       display.println(spo2Status[status.spo2Class]);
     }
-    
     display.display();
   }
 }
