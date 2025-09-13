@@ -7,6 +7,7 @@ import os
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
+
 def generate_realistic_synthetic_data(n_samples=50000, random_seed=42):
     """
     Generate realistic HR and SpO2 data with physiological correlations.
@@ -31,7 +32,9 @@ def generate_realistic_synthetic_data(n_samples=50000, random_seed=42):
     # Generate samples across all combinations of conditions
     for _ in range(n_samples):
         # Randomly choose SpO2 condition
-        spo2_condition = np.random.choice([0, 1, 2], p=[0.7, 0.2, 0.1])  # Most samples normal
+        spo2_condition = np.random.choice(
+            [0, 1, 2], p=[0.7, 0.2, 0.1]
+        )  # Most samples normal
 
         if spo2_condition == 0:  # Normal SpO2 (95-100%)
             spo2 = np.random.normal(98, 1.5)
@@ -75,16 +78,33 @@ def generate_realistic_synthetic_data(n_samples=50000, random_seed=42):
 
     print(f"Generated {len(spo2_labels)} samples:")
     print(f"SpO2 Distribution:")
-    print(f"  Normal (95-100%): {np.sum(spo2_labels == 0)} ({np.sum(spo2_labels == 0)/len(spo2_labels)*100:.1f}%)")
-    print(f"  Mild Hypoxemia (90-94%): {np.sum(spo2_labels == 1)} ({np.sum(spo2_labels == 1)/len(spo2_labels)*100:.1f}%)")
-    print(f"  High Hypoxemia (<90%): {np.sum(spo2_labels == 2)} ({np.sum(spo2_labels == 2)/len(spo2_labels)*100:.1f}%)")
+    print(
+        f"  Normal (95-100%): {np.sum(spo2_labels == 0)} ({np.sum(spo2_labels == 0)/len(spo2_labels)*100:.1f}%)"
+    )
+    print(
+        f"  Mild Hypoxemia (90-94%): {np.sum(spo2_labels == 1)} ({np.sum(spo2_labels == 1)/len(spo2_labels)*100:.1f}%)"
+    )
+    print(
+        f"  High Hypoxemia (<90%): {np.sum(spo2_labels == 2)} ({np.sum(spo2_labels == 2)/len(spo2_labels)*100:.1f}%)"
+    )
 
     print(f"HR Distribution:")
-    print(f"  Normal (60-100 bpm): {np.sum(hr_labels == 0)} ({np.sum(hr_labels == 0)/len(hr_labels)*100:.1f}%)")
-    print(f"  Bradycardia (<60 bpm): {np.sum(hr_labels == 1)} ({np.sum(hr_labels == 1)/len(hr_labels)*100:.1f}%)")
-    print(f"  Tachycardia (>100 bpm): {np.sum(hr_labels == 2)} ({np.sum(hr_labels == 2)/len(hr_labels)*100:.1f}%)")
+    print(
+        f"  Normal (60-100 bpm): {np.sum(hr_labels == 0)} ({np.sum(hr_labels == 0)/len(hr_labels)*100:.1f}%)"
+    )
+    print(
+        f"  Bradycardia (<60 bpm): {np.sum(hr_labels == 1)} ({np.sum(hr_labels == 1)/len(hr_labels)*100:.1f}%)"
+    )
+    print(
+        f"  Tachycardia (>100 bpm): {np.sum(hr_labels == 2)} ({np.sum(hr_labels == 2)/len(hr_labels)*100:.1f}%)"
+    )
 
-    return X_raw.astype(np.float32), spo2_labels.astype(np.int32), hr_labels.astype(np.int32)
+    return (
+        X_raw.astype(np.float32),
+        spo2_labels.astype(np.int32),
+        hr_labels.astype(np.int32),
+    )
+
 
 def normalize_features(X_raw):
     """
@@ -104,6 +124,7 @@ def normalize_features(X_raw):
 
     return np.column_stack([hr_norm, spo2_norm]).astype(np.float32)
 
+
 def build_dual_output_model():
     """
     Build a model with 6 outputs: 3 for SpO2 classification + 3 for HR classification.
@@ -111,31 +132,49 @@ def build_dual_output_model():
     - outputs 0-2: SpO2 classes (Normal, Mild Hypoxemia, High Hypoxemia)
     - outputs 3-5: HR classes (Normal, Bradycardia, Tachycardia)
     """
-    inputs = layers.Input(shape=(2,), name='input')
+    inputs = layers.Input(shape=(2,), name="input")
 
     # Shared hidden layers
-    x = layers.Dense(32, activation='relu', name='shared_dense1',
-                    kernel_regularizer=regularizers.l2(0.001))(inputs)
+    x = layers.Dense(
+        32,
+        activation="relu",
+        name="shared_dense1",
+        kernel_regularizer=regularizers.l2(0.001),
+    )(inputs)
     x = layers.Dropout(0.3)(x)
 
-    x = layers.Dense(24, activation='relu', name='shared_dense2',
-                    kernel_regularizer=regularizers.l2(0.001))(x)
+    x = layers.Dense(
+        24,
+        activation="relu",
+        name="shared_dense2",
+        kernel_regularizer=regularizers.l2(0.001),
+    )(x)
     x = layers.Dropout(0.2)(x)
 
     # SpO2 branch
-    spo2_branch = layers.Dense(16, activation='relu', name='spo2_dense',
-                              kernel_regularizer=regularizers.l2(0.001))(x)
+    spo2_branch = layers.Dense(
+        16,
+        activation="relu",
+        name="spo2_dense",
+        kernel_regularizer=regularizers.l2(0.001),
+    )(x)
     spo2_branch = layers.Dropout(0.2)(spo2_branch)
-    spo2_output = layers.Dense(3, activation='softmax', name='spo2_output')(spo2_branch)
+    spo2_output = layers.Dense(3, activation="softmax", name="spo2_output")(spo2_branch)
 
     # HR branch
-    hr_branch = layers.Dense(16, activation='relu', name='hr_dense',
-                            kernel_regularizer=regularizers.l2(0.001))(x)
+    hr_branch = layers.Dense(
+        16,
+        activation="relu",
+        name="hr_dense",
+        kernel_regularizer=regularizers.l2(0.001),
+    )(x)
     hr_branch = layers.Dropout(0.2)(hr_branch)
-    hr_output = layers.Dense(3, activation='softmax', name='hr_output')(hr_branch)
+    hr_output = layers.Dense(3, activation="softmax", name="hr_output")(hr_branch)
 
     # Concatenate outputs to match Arduino expectation (SpO2 first 3, HR next 3)
-    combined_output = layers.Concatenate(name='combined_output')([spo2_output, hr_output])
+    combined_output = layers.Concatenate(name="combined_output")(
+        [spo2_output, hr_output]
+    )
 
     model = keras.Model(inputs=inputs, outputs=combined_output)
 
@@ -143,13 +182,15 @@ def build_dual_output_model():
     def combined_loss(y_true, y_pred):
         # Extract SpO2 and HR parts
         spo2_true = y_true[:, 0]  # SpO2 labels
-        hr_true = y_true[:, 1]    # HR labels
+        hr_true = y_true[:, 1]  # HR labels
 
         spo2_pred = y_pred[:, 0:3]  # First 3 outputs
-        hr_pred = y_pred[:, 3:6]    # Last 3 outputs
+        hr_pred = y_pred[:, 3:6]  # Last 3 outputs
 
         # Calculate categorical crossentropy for each task
-        spo2_loss = tf.keras.losses.sparse_categorical_crossentropy(spo2_true, spo2_pred)
+        spo2_loss = tf.keras.losses.sparse_categorical_crossentropy(
+            spo2_true, spo2_pred
+        )
         hr_loss = tf.keras.losses.sparse_categorical_crossentropy(hr_true, hr_pred)
 
         return spo2_loss + hr_loss
@@ -161,27 +202,30 @@ def build_dual_output_model():
         spo2_pred = tf.argmax(y_pred[:, 0:3], axis=1)
         hr_pred = tf.argmax(y_pred[:, 3:6], axis=1)
 
-        spo2_acc = tf.cast(tf.equal(tf.cast(spo2_true, tf.int64), spo2_pred), tf.float32)
+        spo2_acc = tf.cast(
+            tf.equal(tf.cast(spo2_true, tf.int64), spo2_pred), tf.float32
+        )
         hr_acc = tf.cast(tf.equal(tf.cast(hr_true, tf.int64), hr_pred), tf.float32)
 
         return (spo2_acc + hr_acc) / 2.0
 
-
     model.compile(
         optimizer=keras.optimizers.Adam(learning_rate=0.001),
         loss=combined_loss,
-        metrics=[combined_accuracy]
+        metrics=[combined_accuracy],
     )
 
     return model
+
 
 def representative_dataset_generator(X_norm):
     """
     Generator for quantization calibration.
     """
     for i in range(min(200, X_norm.shape[0])):
-        sample = X_norm[i:i+1]
+        sample = X_norm[i : i + 1]
         yield [sample]
+
 
 def convert_to_tflite_int8(keras_model, X_norm, tflite_path):
     """
@@ -203,7 +247,7 @@ def convert_to_tflite_int8(keras_model, X_norm, tflite_path):
 
         # Save model
         os.makedirs(os.path.dirname(tflite_path) or ".", exist_ok=True)
-        with open(tflite_path, 'wb') as f:
+        with open(tflite_path, "wb") as f:
             f.write(tflite_model)
 
         model_size = len(tflite_model) / 1024  # Size in KB
@@ -214,6 +258,7 @@ def convert_to_tflite_int8(keras_model, X_norm, tflite_path):
     except Exception as e:
         print(f"❌ TFLite conversion failed: {e}")
         return None
+
 
 def evaluate_dual_model(model, X_val, y_spo2_val, y_hr_val):
     """
@@ -244,15 +289,24 @@ def evaluate_dual_model(model, X_val, y_spo2_val, y_hr_val):
 
     # SpO2 Classification Report
     print("\n📋 SpO2 Classification Report:")
-    spo2_target_names = ['Normal (95-100%)', 'Mild Hypoxemia (90-94%)', 'High Hypoxemia (<90%)']
+    spo2_target_names = [
+        "Normal (95-100%)",
+        "Mild Hypoxemia (90-94%)",
+        "High Hypoxemia (<90%)",
+    ]
     print(classification_report(y_spo2_val, spo2_pred, target_names=spo2_target_names))
 
     # HR Classification Report
     print("\n📋 HR Classification Report:")
-    hr_target_names = ['Normal (60-100 bpm)', 'Bradycardia (<60 bpm)', 'Tachycardia (>100 bpm)']
+    hr_target_names = [
+        "Normal (60-100 bpm)",
+        "Bradycardia (<60 bpm)",
+        "Tachycardia (>100 bpm)",
+    ]
     print(classification_report(y_hr_val, hr_pred, target_names=hr_target_names))
 
     return overall_acc
+
 
 def main(args):
     print("🏥 Training Dual-Output Health Monitoring Model for Arduino")
@@ -261,8 +315,7 @@ def main(args):
     # 1) Generate realistic synthetic data
     print("🔄 Generating realistic synthetic data...")
     X_raw, y_spo2, y_hr = generate_realistic_synthetic_data(
-        n_samples=args.samples,
-        random_seed=42
+        n_samples=args.samples, random_seed=42
     )
 
     # 2) Normalize features
@@ -274,7 +327,12 @@ def main(args):
         X_norm, y_spo2, y_hr, test_size=0.15, random_state=42, stratify=y_spo2
     )
     X_train, X_val, y_spo2_train, y_spo2_val, y_hr_train, y_hr_val = train_test_split(
-        X_temp, y_spo2_temp, y_hr_temp, test_size=0.18, random_state=42, stratify=y_spo2_temp
+        X_temp,
+        y_spo2_temp,
+        y_hr_temp,
+        test_size=0.18,
+        random_state=42,
+        stratify=y_spo2_temp,
     )
 
     print(f"Training samples: {len(X_train)}")
@@ -299,29 +357,26 @@ def main(args):
     # Callbacks for better training
     callbacks = [
         keras.callbacks.EarlyStopping(
-            monitor='val_combined_accuracy',
+            monitor="val_combined_accuracy",
             patience=15,
             restore_best_weights=True,
             verbose=1,
-            mode='max' # Added mode='max'
+            mode="max",  # Added mode='max'
         ),
         keras.callbacks.ReduceLROnPlateau(
-            monitor='val_loss',
-            factor=0.5,
-            patience=8,
-            verbose=1,
-            min_lr=1e-6
-        )
+            monitor="val_loss", factor=0.5, patience=8, verbose=1, min_lr=1e-6
+        ),
     ]
 
     # Train model
     history = model.fit(
-        X_train, y_train_combined,
+        X_train,
+        y_train_combined,
         validation_data=(X_val, y_val_combined),
         epochs=args.epochs,
         batch_size=args.batch_size,
         callbacks=callbacks,
-        verbose=1
+        verbose=1,
     )
 
     # 5) Evaluate model
@@ -347,25 +402,28 @@ def main(args):
 
     return model, history
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Train dual-output health monitoring model for Arduino"
     )
     parser.add_argument(
-        "--samples", type=int, default=50000,
-        help="Number of synthetic samples (default: 50000)"
+        "--samples",
+        type=int,
+        default=50000,
+        help="Number of synthetic samples (default: 50000)",
     )
     parser.add_argument(
-        "--epochs", type=int, default=100,
-        help="Maximum training epochs (default: 100)"
+        "--epochs", type=int, default=100, help="Maximum training epochs (default: 100)"
     )
     parser.add_argument(
-        "--batch_size", type=int, default=64,
-        help="Training batch size (default: 64)"
+        "--batch_size", type=int, default=256, help="Training batch size (default: 256)"
     )
     parser.add_argument(
-        "--tflite_path", type=str, default="hrSpO2model.tflite",
-        help="Output TFLite file path"
+        "--tflite_path",
+        type=str,
+        default="hrSpO2model.tflite",
+        help="Output TFLite file path",
     )
 
     # Parse known arguments and ignore the rest
