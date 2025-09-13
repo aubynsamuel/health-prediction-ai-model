@@ -2,7 +2,7 @@
 
 # Health Monitoring AI for Wearables
 
-**A professional, lightweight machine learning model for real-time health monitoring on microcontrollers.**
+**A lightweight machine learning model for real-time health monitoring on microcontrollers.**
 
 </div>
 
@@ -12,11 +12,11 @@ This project provides a complete pipeline for training and deploying a TensorFlo
 
 ## ✨ Key Features
 
-- **High-Performance Model**: Achieves >98% accuracy on test data.
+- **Dual-Output Model**: Predicts both SpO2 and HR status simultaneously, achieving >98% accuracy.
 - **Optimized for Microcontrollers**: Fully INT8 quantized, resulting in a model size of less than 3 KB.
 - **Professional Codebase**: Features modular code, type hinting, extensive logging, and clear configuration management.
 - **Realistic Synthetic Data**: Includes a sophisticated data generation script that mimics real-world physiological patterns.
-- **Interactive Testing**: Comes with a user-friendly CLI for real-time model testing and evaluation.
+- **Interactive Inference**: Comes with a user-friendly CLI for real-time model testing and evaluation.
 
 ## 🚀 Getting Started
 
@@ -30,7 +30,7 @@ This project provides a complete pipeline for training and deploying a TensorFlo
 Clone the repository and install the required dependencies:
 
 ```bash
-# It is recommended to use a virtual environment
+# It is recommended to use a virtual environment (optional)
 python -m venv .venv
 source .venv/bin/activate  # On Windows, use `\.venv\Scripts\activate`
 
@@ -40,42 +40,44 @@ pip install -r requirements.txt
 
 ### 2. Train the Model
 
-Run the training script to generate the `health_model_optimized.tflite` file:
+Run the training script to generate the `hrSpO2model.tflite` file:
 
 ```bash
-python train_model.py
+python spo2hrmodeltraining.py
 ```
 
 The script will log the entire training process, including data generation, model compilation, training, and evaluation.
 
 ### 3. Test the Model
 
-Test the generated model with the interactive testing script:
+Test the generated model with the interactive inference script:
+
+#### Interactive Mode
 
 ```bash
-python test_model.py
+python inference.py --interactive
 ```
 
-You can input custom HR and SpO2 values or run a set of predefined test cases to see the model in action.
+You will be prompted to enter HR and SpO2 values.
+
+#### Single Prediction
+
+```bash
+python inference.py --hr 75 --spo2 98
+```
 
 ## 🤖 Model Details
 
-- **Architecture**: A sequential model with two dense hidden layers (16 and 8 neurons respectively) using ReLU activation, L2 regularization, and dropout to prevent overfitting.
-- **Output Layer**: A dense layer with 3 neurons and a softmax activation function to output probabilities for the three health classes.
-- **Classes**:
-  - **🟢 Healthy**: Normal vital signs.
-  - **🟡 Warning**: Vitals are outside the ideal range, indicating potential risk.
-  - **🔴 Critical**: Vitals are in a dangerous range, requiring immediate attention.
-
-## 🤝 Contributing
-
-Contributions are welcome! If you have suggestions for improvements or find any issues, please open an issue or submit a pull request.
-
-1. **Fork the repository**
-2. **Create a new branch** (`git checkout -b feature/YourFeature`)
-3. **Commit your changes** (`git commit -m 'Add some feature'`)
-4. **Push to the branch** (`git push origin feature/YourFeature`)
-5. **Open a pull request**
+- **Architecture**: A dual-output sequential model with shared hidden layers (32 and 24 neurons) using ReLU activation, L2 regularization, and dropout. The model then branches out to two separate heads for SpO2 and HR prediction, each with a 16-neuron hidden layer.
+- **Output Layer**: A concatenated output of two softmax layers, providing probabilities for the health classes of each vital sign.
+- **SpO2 Classes**:
+  - **🟢 Normal**: 95-100%
+  - **🟡 Mild Hypoxemia**: 90-94%
+  - **🔴 High Hypoxemia**: <90%
+- **Heart Rate Classes**:
+  - **🟢 Normal**: 60-100 bpm
+  - **🟡 Bradycardia**: <60 bpm
+  - **🔴 Tachycardia**: >100 bpm
 
 ## 📄 License
 
